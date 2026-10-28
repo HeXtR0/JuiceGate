@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Juice Gate</title>
+<meta name="theme-color" content="#4cb7ff">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:"Arial Black",Impact,system-ui,sans-serif;color:#fff;touch-action:none;
+    background:linear-gradient(#3aa9ff 0%,#8fd6ff 45%,#d6f3ff 60%)}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block}
+  .abs{position:fixed;left:0;right:0;pointer-events:none}
+  #hud{top:calc(10px + env(safe-area-inset-top));padding:0 12px;display:none;align-items:center;gap:10px}
+  #lv{min-width:54px;height:54px;border-radius:50%;background:linear-gradient(#ffe45c,#ff9f1c);border:4px solid #fff;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;line-height:1;color:#7a3b00;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+  #lv b{font-size:22px;color:#5a2a00}
+  #barwrap{flex:1;height:30px;border-radius:16px;background:rgba(20,30,50,.55);border:3px solid rgba(255,255,255,.85);position:relative;overflow:hidden;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+  #bar{height:100%;width:0%;background:linear-gradient(#7dff6a,#25c93a);transition:width .12s linear}
+  #bar.boss{background:linear-gradient(#ff7a7a,#e02020)}
+  #bartxt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;text-shadow:0 2px 0 rgba(0,0,0,.45)}
+  #icon{font-size:36px;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}
+  #weapon{left:12px;bottom:calc(14px + env(safe-area-inset-bottom));right:auto;display:none;background:rgba(20,30,50,.55);border:3px solid rgba(255,255,255,.85);
+      border-radius:14px;padding:6px 12px;font-size:15px}
+  #mute{position:fixed;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;border:3px solid #fff;background:rgba(20,30,50,.55);
+      color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(transparent 40%,rgba(255,0,0,.55));transition:opacity .25s}
+  #hint{top:38%;text-align:center;font-size:22px;display:none;text-shadow:0 3px 0 rgba(0,0,0,.4);animation:pulse 1s infinite}
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;text-align:center;
+      background:radial-gradient(rgba(0,20,60,.15),rgba(0,20,60,.55))}
+  .screen.show{display:flex}
+  .logo{font-size:min(16vw,92px);line-height:.92;letter-spacing:2px;transform:rotate(-3deg);color:#a6ff2e;
+      text-shadow:-4px -4px 0 #164a00,4px -4px 0 #164a00,-4px 4px 0 #164a00,4px 4px 0 #164a00,0 -4px 0 #164a00,0 4px 0 #164a00,-4px 0 0 #164a00,4px 0 0 #164a00,0 9px 0 #0c2a00,0 14px 16px rgba(0,0,0,.4)}
+  .logo small{display:block;font-size:.5em;letter-spacing:8px;color:#fff25c}
+  .sub{font-size:18px;text-shadow:0 2px 0 rgba(0,0,0,.5);max-width:420px;line-height:1.35}
+  button.big{pointer-events:auto;cursor:pointer;font:inherit;font-size:30px;padding:14px 46px;border-radius:20px;border:4px solid #fff;color:#fff;
+      background:linear-gradient(#7dff6a,#1fb83a);box-shadow:0 7px 0 #0c6a1f,0 12px 18px rgba(0,0,0,.3);text-shadow:0 3px 0 rgba(0,0,0,.35);animation:pulse 1.1s infinite}
+  button.big:active{transform:translateY(5px);box-shadow:0 2px 0 #0c6a1f}
+  button.big.red{background:linear-gradient(#ff8a8a,#e02b2b);box-shadow:0 7px 0 #8a1010,0 12px 18px rgba(0,0,0,.3)}
+  .title2{font-size:min(11vw,58px);text-shadow:0 5px 0 rgba(0,0,0,.4);-webkit-text-stroke:2px rgba(0,0,0,.25)}
+  .stat{font-size:22px;text-shadow:0 2px 0 rgba(0,0,0,.5)}
+  @keyframes pulse{50%{transform:scale(1.06)}}
+  #err{position:fixed;left:10px;right:10px;top:10px;background:#300;color:#fff;font:12px monospace;padding:10px;border-radius:8px;display:none;z-index:9;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+
+<div id="hud" class="abs">
+  <div id="lv">LEVEL<b id="lvn">1</b></div>
+  <div id="barwrap"><div id="bar"></div><div id="bartxt"></div></div>
+  <div id="icon">🍆</div>
+</div>
+<div id="weapon" class="abs">🔫 SİLAH <span id="wl">1</span></div>
+<div id="hint" class="abs">⬅️ Sürükle ➡️</div>
+<button id="mute" aria-label="Ses">🔊</button>
+
+<div id="title" class="screen show">
+  <div class="logo">JUICE<small>★ GATE ★</small></div>
+  <div class="sub">Kapıları ateşle, sayını büyüt, çürük ordusunu ez!<br>Sürükle / A-D / ← →</div>
+  <div class="stat" id="tlv">LEVEL 1</div>
+  <button class="big" id="play">OYNA</button>
+</div>
+
+<div id="end" class="screen">
+  <div class="title2" id="etitle">LEVEL TAMAM!</div>
+  <div class="stat" id="estat"></div>
+  <button class="big" id="enext">SONRAKİ</button>
+</div>
+
+<div id="err"></div>
+<script>
+window.addEventListener('error',function(e){var d=document.getElementById('err');d.style.display='block';d.textContent+=(e.message||e)+' ('+(e.filename||'')+':'+(e.lineno||'')+')\n';});
+</script>
+<script src="lib/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
